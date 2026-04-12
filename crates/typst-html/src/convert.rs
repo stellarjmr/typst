@@ -14,7 +14,7 @@ use typst_library::text::{
 use typst_syntax::Span;
 use typst_utils::SliceExt;
 
-use crate::fragment::{html_block_fragment, html_inline_fragment};
+use crate::fragment::{html_block_fragment, html_inline_fragment, html_math_fragment};
 use crate::{
     FrameElem, HtmlElem, HtmlElement, HtmlFrame, HtmlNode, attr, css, property, tag,
 };
@@ -208,6 +208,15 @@ fn handle_html_elem(
             // create inline-level content next to block-level content
             // without a paragraph automatically appearing.
             *converter.quoter = SmartQuoter::new();
+        } else if tag::mathml::is_mathml(elem.tag) {
+            children = html_math_fragment(
+                converter.engine,
+                body,
+                converter.locator,
+                converter.quoter,
+                styles,
+                whitespace,
+            )?;
         } else {
             children = html_inline_fragment(
                 converter.engine,
