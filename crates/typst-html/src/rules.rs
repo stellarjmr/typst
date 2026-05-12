@@ -838,3 +838,13 @@ const EQUATION_RULE: ShowFn<EquationElem> = |elem, engine, styles| {
 
     Ok(if block { BlockElem::packed(math) } else { math })
 };
+
+/// Returns the body of a MathML `HtmlElem`, if the content is one.
+#[doc(hidden)]
+pub fn html_mathml_body<'a>(
+    content: &'a Content,
+    styles: StyleChain<'a>,
+) -> Option<Option<&'a Content>> {
+    let elem = content.to_packed::<HtmlElem>()?;
+    tag::mathml::is_mathml(elem.tag).then(|| elem.body.get_ref(styles).as_ref())
+}

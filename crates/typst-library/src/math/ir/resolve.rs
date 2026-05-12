@@ -12,7 +12,9 @@ use super::multiline::{AlignedRow, expand_multiline_fence};
 use super::process::{GroupResult, process_group, process_table_cell};
 use crate::diag::{SourceResult, bail, warning};
 use crate::engine::Engine;
-use crate::foundations::{Content, Packed, Style, StyleChain, Styles, SymbolElem};
+use crate::foundations::{
+    Content, Packed, Style, StyleChain, Styles, SymbolElem, TargetElem,
+};
 use crate::introspection::{Locator, SplitLocator, TagElem};
 use crate::layout::{Abs, Axes, BoxElem, FixedAlignment, HElem, Ratio, Rel, Spacing};
 use crate::math::*;
@@ -221,10 +223,30 @@ fn resolve_realized<'a, 'v, 'e>(
         resolve_undershell(elem, ctx, styles)?;
     } else if let Some(elem) = elem.to_packed::<OvershellElem>() {
         resolve_overshell(elem, ctx, styles)?;
+    } else if let Some(body) =
+        (ctx.engine.library.routines.html_mathml_body)(elem, styles)
+    {
+        resolve_mathml(elem, body, ctx, styles)?;
     } else {
         let locator = ctx.locator.next(&elem.span());
         ctx.push(ExternalItem::create(elem, styles, locator));
     }
+    Ok(())
+}
+
+/// Resolves a MathML HTML element.
+fn resolve_mathml<'a, 'v, 'e>(
+    elem: &'a Content,
+    body: Option<&'a Content>,
+    ctx: &mut MathResolver<'a, 'v, 'e>,
+    styles: StyleChain<'a>,
+) -> SourceResult<()> {
+    let body = if styles.get(TargetElem::target).is_html() {
+        body.map(|body| ctx.resolve_into_item(body, styles)).transpose()?
+    } else {
+        None
+    };
+    ctx.push(MathmlItem::create(elem, body, styles));
     Ok(())
 }
 

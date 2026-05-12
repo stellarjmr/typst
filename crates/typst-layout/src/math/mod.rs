@@ -22,7 +22,7 @@ use typst_library::layout::{
     OuterHAlignment, Point, Region, Regions, Size, SpecificAlignment, VAlignment,
 };
 use typst_library::math::ir::{
-    BoxItem, ExternalItem, MathComponent, MathItem, MathKind, MathProperties,
+    BoxItem, ExternalItem, MathComponent, MathItem, MathKind, MathProperties, MathmlItem,
     resolve_equation,
 };
 use typst_library::math::{EquationElem, families};
@@ -499,6 +499,7 @@ fn layout_realized(
     // Dispatch based on item kind to the appropriate layout function.
     match &comp.kind {
         MathKind::Box(item) => layout_box(item, ctx, styles, props)?,
+        MathKind::Mathml(item) => layout_mathml(item, ctx, styles, props)?,
         MathKind::External(item) => layout_external(item, ctx, styles, props)?,
         MathKind::Glyph(item) => layout_glyph(item, ctx, styles, props)?,
         MathKind::Cancel(item) => layout_cancel(item, ctx, styles, props)?,
@@ -544,6 +545,20 @@ fn layout_realized(
         ctx.push(MathFragment::Space(width));
     }
 
+    Ok(())
+}
+
+/// Ignore a MathML HTML element during paged export.
+fn layout_mathml(
+    item: &MathmlItem,
+    ctx: &mut MathContext,
+    _styles: StyleChain,
+    _props: &MathProperties,
+) -> SourceResult<()> {
+    ctx.engine.sink.warn(warning!(
+        item.elem.span(),
+        "MathML element was ignored during paged export",
+    ));
     Ok(())
 }
 

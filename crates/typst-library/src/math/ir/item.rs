@@ -388,6 +388,8 @@ pub enum MathKind<'a> {
     Glyph(Box<GlyphItem>),
     /// Inline content.
     Box(BoxItem<'a>),
+    /// A MathML HTML element.
+    Mathml(Box<MathmlItem<'a>>),
     /// External content that needs to be laid out separately.
     External(ExternalItem<'a>),
 }
@@ -957,6 +959,30 @@ impl<'a> BoxItem<'a> {
     ) -> MathItem<'a> {
         let kind = MathKind::Box(Self { elem, locator });
         let props = MathProperties::default(styles, elem.span()).with_spaced(true);
+        MathComponent { kind, props, styles }.into()
+    }
+}
+
+/// A MathML HTML element with resolved children.
+#[derive(Debug)]
+pub struct MathmlItem<'a> {
+    /// The original MathML HTML element content.
+    ///
+    /// This is always a `HtmlElem`.
+    pub elem: &'a Content,
+    /// The element's resolved IR body.
+    pub body: Option<MathItem<'a>>,
+}
+
+impl<'a> MathmlItem<'a> {
+    /// Creates a new MathML HTML element item.
+    pub(crate) fn create(
+        elem: &'a Content,
+        body: Option<MathItem<'a>>,
+        styles: StyleChain<'a>,
+    ) -> MathItem<'a> {
+        let kind = MathKind::Mathml(Box::new(Self { elem, body }));
+        let props = MathProperties::default(styles, elem.span());
         MathComponent { kind, props, styles }.into()
     }
 }
